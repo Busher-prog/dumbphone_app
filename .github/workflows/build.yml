@@ -9,7 +9,7 @@ jobs:
   ipa:
     name: Build IPA, tests, simulator screenshots
     timeout-minutes: 60
-    runs-on: macos-15
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
       - name: Xcode version
