@@ -7,7 +7,8 @@ on:
 
 jobs:
   ipa:
-    name: Build unsigned IPA
+    name: Build IPA, tests, simulator screenshots
+    timeout-minutes: 60
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -37,11 +38,6 @@ jobs:
           name: build-log
           path: build.log
 
-  simulator:
-    name: Tests and simulator screenshots
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
       - name: Pick an iPhone simulator
         id: sim
         run: |
