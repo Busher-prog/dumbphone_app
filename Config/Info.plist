@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Dark only: the app never switches to a light appearance. -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
+	<!-- Lets the launcher check which apps are installed. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mobilephone</string>
+		<string>sms</string>
+		<string>message</string>
+		<string>maps</string>
+		<string>photos-redirect</string>
+		<string>music</string>
+		<string>calshow</string>
+		<string>shoebox</string>
+		<string>mobilenotes</string>
+		<string>x-apple-reminderkit</string>
+		<string>shortcuts</string>
+		<string>tg</string>
+		<string>whatsapp</string>
+		<string>instagram</string>
+		<string>youtube</string>
+		<string>spotify</string>
+		<string>notion</string>
+		<string>googlegmail</string>
+		<string>comgooglemaps</string>
+		<string>googlechrome</string>
+		<string>slack</string>
+		<string>obsidian</string>
+	</array>
+</dict>
+</plist>

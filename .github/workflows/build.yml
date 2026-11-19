@@ -1,0 +1,83 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ipa:
+    name: Build unsigned IPA
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode version
+        run: xcodebuild -version
+      - name: Build for device (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild -project SAKURA365.xcodeproj -scheme SAKURA365 \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tee build.log | grep -E "error:|BUILD" || true
+          test -d build/Build/Products/Release-iphoneos/SAKURA365.app
+      - name: Package IPA
+        run: |
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/SAKURA365.app Payload/
+          zip -qry SAKURA365.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SAKURA365-ipa
+          path: SAKURA365.ipa
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log
+          path: build.log
+
+  simulator:
+    name: Tests and simulator screenshots
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pick an iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if x['name'].startswith('iPhone') and 'Pro' in x['name'] and 'Max' not in x['name']))")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices available | grep "$UDID"
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          xcodebuild -project SAKURA365.xcodeproj -scheme SAKURA365 \
+            -destination "id=${{ steps.sim.outputs.udid }}" -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO test | tee test.log | grep -E "error:|Test Case|TEST" || true
+          grep -q "TEST SUCCEEDED" test.log
+      - name: Launch app, take screenshots and a short recording
+        if: always()
+        run: |
+          UDID=${{ steps.sim.outputs.udid }}
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl ui "$UDID" appearance dark
+          xcrun simctl status_bar "$UDID" override --time "09:32" --batteryState charged --batteryLevel 100 || true
+          APP=$(find build/Build/Products -maxdepth 3 -path "*iphonesimulator/SAKURA365.app" | head -1)
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl launch "$UDID" com.sakura365.app
+          sleep 8
+          xcrun simctl io "$UDID" screenshot screenshot-1.png
+          sleep 6
+          xcrun simctl io "$UDID" screenshot screenshot-2.png
+          xcrun simctl io "$UDID" recordVideo --codec h264 wind.mp4 & REC=$!
+          sleep 15
+          kill -INT $REC; wait $REC || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: simulator
+          path: |
+            screenshot-*.png
+            wind.mp4
+            test.log
